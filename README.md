@@ -5,9 +5,8 @@ This is a simple ray tracing program written in Java. It renders a scene with th
 ---
 
 ## Features
-- **3D Sphere Rendering**: Renders three spheres in a 3D space.
+- **Sphere Rendering**: Renders a 2D projection of a 3D scene.
 - **Ray-Sphere Intersection**: Uses mathematical formulas to compute intersections between rays and spheres.
-- **Basic Lighting**: Each sphere is colored with a solid color (no shading or shadows).
 - **Interactive Display**: Displays the rendered image in a window using Java's `JFrame`.
 
 ---
@@ -28,16 +27,7 @@ To run this program, you need:
 Open a terminal or command prompt and navigate to the directory containing the `RayTracer.java` file. Then, compile the program using the following command:
 
 ```bash
-javac RayTracer.java
-```
-
-This will generate a `RayTracer.class` file.
-
-### 3. Run the Program
-After compiling, run the program using the following command:
-
-```bash
-java RayTracer
+java RayTracer.java
 ```
 
 ### 4. View the Output
@@ -78,48 +68,11 @@ The main class that handles rendering and display. It includes:
 
 ## Example Output
 The program will render three spheres:
-- A **red sphere** at `(0, 1, 3)`.
+- A **red sphere** at `(0, -1, 3)`.
 - A **blue sphere** at `(2, 0, 4)`.
 - A **green sphere** at `(-2, 0, 4)`.
 
 The rendered image will look like this:
 
 ```
-+--------------------------------+
-|                                |
-|             RED                |
-|                                |
-|      BLUE          GREEN       |
-|                                |
-+--------------------------------+
-```
 
----
-
-## Customization
-You can modify the program to:
-- Add more spheres to the scene.
-- Change the colors, positions, or sizes of the spheres.
-- Implement shading, reflections, or shadows for more realistic rendering.
-
----
-
-## Troubleshooting
-- **Java Not Found**: Ensure Java is installed and added to your system's PATH.
-  - Check Java version: `java -version`
-- **Compilation Errors**: Ensure the `RayTracer.java` file is in the correct directory and has no syntax errors.
-- **No Display**: If the window does not open, ensure your system supports Java's GUI libraries.
-
----
-
-## License
-This project is open-source and available under the MIT License. Feel free to use, modify, and distribute it.
-
----
-
-## Author
-[Your Name]
-
----
-
-Let me know if you need further assistance!
