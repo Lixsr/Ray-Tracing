@@ -71,6 +71,4 @@ The program will render three spheres:
 - A **green sphere** at `(-2, 0, 4)`.
 
 The rendered image will look like this:
-
-```
-
+![Rendered Image of Three Spheres](Java/generatedImage.png)
