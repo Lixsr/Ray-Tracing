@@ -14,8 +14,6 @@ This is a simple ray tracing program written in Java. It renders a scene with th
 ## Prerequisites
 To run this program, you need:
 - **Java Development Kit (JDK)**: Ensure you have JDK 8 or later installed.
-- **IDE or Command Line**: You can use an IDE like IntelliJ IDEA, Eclipse, or run the program from the command line.
-
 ---
 
 ## How to Run the Program
@@ -23,7 +21,7 @@ To run this program, you need:
 ### 1. Clone or Download the Code
 - Clone this repository or download the `RayTracer.java` file to your local machine.
 
-### 2. Compile the Program
+### 2. Run the Program
 Open a terminal or command prompt and navigate to the directory containing the `RayTracer.java` file. Then, compile the program using the following command:
 
 ```bash
