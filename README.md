@@ -101,14 +101,3 @@ The main class that handles rendering and display. It includes:
 - **Main Method**: Initializes the program and displays the rendered image in a window.
 
 ---
-
-## Example Output
-
-The program will render three spheres:
-
-- A **red sphere** at `(0, -1, 3)`.
-- A **blue sphere** at `(2, 0, 4)`.
-- A **green sphere** at `(-2, 0, 4)`.
-
-The rendered image will look like this:
-![Rendered Image of Three Spheres](Java/generatedImage.png)
