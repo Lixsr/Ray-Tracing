@@ -11,6 +11,11 @@ public class Point3D {
         return new Point3D(this.x - other.x, this.y - other.y, this.z - other.z);
     }
 
+    public Point3D add(Point3D other) {
+        return new Point3D(this.x + other.x, this.y + other.y, this.z + other.z);
+    }
+    
+
     public Point3D multiply(double scalar) {
         return new Point3D(this.x * scalar, this.y * scalar, this.z * scalar);
     }

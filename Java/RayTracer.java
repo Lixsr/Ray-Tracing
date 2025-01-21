@@ -19,10 +19,12 @@ public class RayTracer extends JPanel {
     // Initialize the scene
     static {
         scene = new Sphere[] {
-            new Sphere(new Point3D(0, -1, 3), 1, Color.RED),
-            new Sphere(new Point3D(2, 0, 4), 1, Color.BLUE),
-            new Sphere(new Point3D(-2, 0, 4), 1, Color.GREEN)
+            new Sphere(new Point3D(0, -1, 3), 1, Color.RED, 500),    // Shiny red sphere
+            new Sphere(new Point3D(2, 0, 4), 1, Color.BLUE, 500),    // Shiny blue sphere
+            new Sphere(new Point3D(-2, 0, 4), 1, Color.GREEN, 10),   // Somewhat shiny green sphere
+            new Sphere(new Point3D(0, -5001, 0), 5000, new Color(255, 255, 0), 1000) // Very shiny yellow sphere
         };
+        
     }
 
     // Canvas to viewport conversion
@@ -55,29 +57,44 @@ public class RayTracer extends JPanel {
     private static Color traceRay(Point3D O, Point3D D, double tMin, double tMax) {
         double closestT = Double.POSITIVE_INFINITY;
         Sphere closestSphere = null;
-
+    
+        // Find the closest intersection
         for (Sphere sphere : scene) {
             double[] tValues = intersectRaySphere(O, D, sphere);
             double t1 = tValues[0];
             double t2 = tValues[1];
-
+    
             if (t1 >= tMin && t1 <= tMax && t1 < closestT) {
                 closestT = t1;
                 closestSphere = sphere;
             }
-
+    
             if (t2 >= tMin && t2 <= tMax && t2 < closestT) {
                 closestT = t2;
                 closestSphere = sphere;
             }
         }
-
+    
         if (closestSphere == null) {
             return BACKGROUND_COLOR;
         }
-
-        return closestSphere.color;
+    
+        // Compute intersection point and normal
+        Point3D P = O.add(D.multiply(closestT)); // P = O + t * D
+        Point3D N = P.subtract(closestSphere.center).normalize(); // N = (P - C) / |P - C|
+    
+        // Compute color with lighting
+        double lighting = computeLighting(P, N, D.multiply(-1), closestSphere.specular);
+        Color sphereColor = closestSphere.color;
+    
+        // Directly multiply color with lighting
+        int r = (int) (sphereColor.getRed() * lighting);
+        int g = (int) (sphereColor.getGreen() * lighting);
+        int b = (int) (sphereColor.getBlue() * lighting);
+    
+        return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
     }
+    
 
     // Render the scene
     private static void render() {
@@ -103,6 +120,49 @@ public class RayTracer extends JPanel {
             }
         }
     }
+
+    // Compute lighting
+    private static double computeLighting(Point3D P, Point3D N, Point3D V, double specular) {
+        double intensity = 0.0;
+    
+        for (Light light : lights) {
+            if (light.type == Light.LightType.AMBIENT) {
+                intensity += light.intensity; // Ambient light
+            } else {
+                Point3D L;
+                if (light.type == Light.LightType.POINT) {
+                    L = light.position.subtract(P); // Vector to light source
+                } else { // DIRECTIONAL
+                    L = light.direction; // Light direction
+                }
+    
+                // Diffuse reflection
+                double nDotL = N.dot(L);
+                if (nDotL > 0) {
+                    intensity += light.intensity * nDotL / (N.length() * L.length());
+                }
+    
+                // Specular reflection (if specular is not -1)
+                if (specular != -1) {
+                    Point3D R = N.multiply(2 * N.dot(L)).subtract(L); // Reflection vector
+                    double rDotV = R.dot(V);
+                    if (rDotV > 0) {
+                        intensity += light.intensity * Math.pow(rDotV / (R.length() * V.length()), specular);
+                    }
+                }
+            }
+        }
+    
+        return intensity;
+    }
+    
+
+    // Initialize the lights
+    static Light[] lights = new Light[] {
+        new Light(Light.LightType.AMBIENT, 0.2, null, null),
+        new Light(Light.LightType.POINT, 0.6, new Point3D(2, 1, 0), null),
+        new Light(Light.LightType.DIRECTIONAL, 0.2, null, new Point3D(1, 4, 4))
+    };
 
     // Main method
     public static void main(String[] args) {
