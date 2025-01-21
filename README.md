@@ -24,15 +24,39 @@ To run this program, you need:
 
 ### 1. Clone or Download the Code
 
-- Clone this repository or download the `RayTracer.java` file to your local machine.
+- Clone this repository or download the `Ray-Tracing` folder to your local machine.
 
-### 2. Run the Program
+### 2. Run the Program on Different Platforms
 
-Open a terminal or command prompt and navigate to the directory containing the `RayTracer.java` file. Then, compile the program using the following command:
+#### Step 1: Open a Terminal or Command Prompt
+
+- **Windows**: Open Command Prompt or PowerShell by searching for it in the Start menu.
+- **Mac**: Open the Terminal application (found in Applications > Utilities).
+- **Linux**: Open a terminal using your preferred method.
+
+#### Step 2: Navigate to the Program Directory
+
+Use the `cd` command to navigate to the directory containing the `RayTracer.java` file. For example:
+
+```bash
+cd path/to/your/directory
+```
+
+#### Step 3: Run the Program
+
+Run the program directly using the following command:
 
 ```bash
 java RayTracer.java
 ```
+
+**Note**: Ensure that Java is properly installed and added to your system's PATH. You can verify this by running:
+
+```bash
+java -version
+```
+
+If Java is not installed or configured, refer to your operating system's instructions for setting it up.
 
 ### 4. View the Output
 
@@ -87,7 +111,4 @@ The program will render three spheres:
 - A **green sphere** at `(-2, 0, 4)`.
 
 The rendered image will look like this:
-
-```
-
-```
+![Rendered Image of Three Spheres](Java/generatedImage.png)
