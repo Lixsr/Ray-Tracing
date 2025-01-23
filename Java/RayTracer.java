@@ -1,8 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
 
-
-
 // Ray Tracer class
 public class RayTracer extends JPanel {
     // Scene settings
@@ -10,12 +8,58 @@ public class RayTracer extends JPanel {
     private static final int HEIGHT = 800;
     private static final double VIEWPORT_SIZE = 1;
     private static final double PROJECTION_PLANE_D = 1;
-    private static final Color BACKGROUND_COLOR = Color.WHITE;
+    private static final Color BACKGROUND_COLOR = Color.BLACK;
     private static Sphere[] scene;
     private static Color[][] canvas;
 
     public RayTracer() {
         this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
+    }
+
+    // Paint the rendered image
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        for (int x = 0; x < WIDTH; x++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                g.setColor(canvas[y][x]);
+                g.fillRect(x, y, 1, 1);
+            }
+        }
+    }
+
+    // Render the scene
+    private static void render() {
+        canvas = new Color[HEIGHT][WIDTH];
+    
+        for (int x = 0; x < WIDTH; x++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                Point3D D = canvasToViewport(x - WIDTH / 2, HEIGHT / 2 - y).normalize();
+                Color color = traceRay(new Point3D(0, 0, 0), D, 1, Double.POSITIVE_INFINITY, 3); // Recursion depth = 3
+                canvas[y][x] = color;
+            }
+        }
+    }
+
+    // Helper Function
+    private static Color multiplyColor(Color color, double scalar) {
+        int r = (int) (color.getRed() * scalar);
+        int g = (int) (color.getGreen() * scalar);
+        int b = (int) (color.getBlue() * scalar);
+        return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
+    }
+
+    // Helper Function
+    private static Color blendColors(Color color1, Color color2, double weight) {
+        int r = (int) (color1.getRed() * (1 - weight) + color2.getRed() * weight);
+        int g = (int) (color1.getGreen() * (1 - weight) + color2.getGreen() * weight);
+        int b = (int) (color1.getBlue() * (1 - weight) + color2.getBlue() * weight);
+        return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
+    }
+
+    private static Point3D reflectRay(Point3D R, Point3D N) {
+        // R_reflected = 2 * N * (N · R) - R
+        return N.multiply(2 * N.dot(R)).subtract(R);
     }
 
     // Initialize the scene
@@ -95,53 +139,44 @@ public class RayTracer extends JPanel {
     }
 
     // Trace a ray
-    private static Color traceRay(Point3D O, Point3D D, double tMin, double tMax) {
+    private static Color traceRay(Point3D O, Point3D D, double tMin, double tMax, int recursionDepth) {
+        // Base case: stop recursion if maximum depth is reached
+        if (recursionDepth <= 0) {
+            return BACKGROUND_COLOR;
+        }
+    
+        // Find the closest intersection
         IntersectionResult result = closestIntersection(O, D, tMin, tMax);
         Sphere closestSphere = result.sphere;
         double closestT = result.t;
-
+    
+        // If no intersection, return the background color
         if (closestSphere == null) {
             return BACKGROUND_COLOR;
         }
-
-        Point3D P = O.add(D.multiply(closestT));
-        Point3D N = P.subtract(closestSphere.center).normalize();
-
-        double lighting = computeLighting(P, N, D.multiply(-1), closestSphere.specular);
-        Color sphereColor = closestSphere.color;
-
-        int r = (int) (sphereColor.getRed() * lighting);
-        int g = (int) (sphereColor.getGreen() * lighting);
-        int b = (int) (sphereColor.getBlue() * lighting);
-
-        return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
-    }
     
-
-    // Render the scene
-    private static void render() {
-        canvas = new Color[HEIGHT][WIDTH];
-
-        for (int x = 0; x < WIDTH; x++) {
-            for (int y = 0; y < HEIGHT; y++) {
-                Point3D D = canvasToViewport(x - WIDTH / 2, HEIGHT / 2 - y).normalize();
-                Color color = traceRay(new Point3D(0, 0, 0), D, 1, Double.POSITIVE_INFINITY);
-                canvas[y][x] = color;
-            }
+        // Compute intersection point and normal
+        Point3D P = O.add(D.multiply(closestT)); // P = O + t * D
+        Point3D N = P.subtract(closestSphere.center).normalize(); // N = (P - C) / |P - C|
+    
+        // Compute local color (diffuse and specular lighting)
+        double lighting = computeLighting(P, N, D.multiply(-1), closestSphere.specular);
+        Color localColor = multiplyColor(closestSphere.color, lighting);
+    
+        // If the sphere is not reflective or recursion limit is reached, return the local color
+        double r = closestSphere.reflective;
+        if (recursionDepth <= 0 || r <= 0) {
+            return localColor;
         }
+    
+        // Compute reflected color
+        Point3D R = reflectRay(D.multiply(-1), N); // R = reflect(-D, N)
+        Color reflectedColor = traceRay(P, R, 0.001, Double.POSITIVE_INFINITY, recursionDepth - 1);
+    
+        // Blend local color and reflected color based on reflectivity
+        return blendColors(localColor, reflectedColor, r);
     }
 
-    // Paint the rendered image
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        for (int x = 0; x < WIDTH; x++) {
-            for (int y = 0; y < HEIGHT; y++) {
-                g.setColor(canvas[y][x]);
-                g.fillRect(x, y, 1, 1);
-            }
-        }
-    }
 
     // Compute lighting
     private static double computeLighting(Point3D P, Point3D N, Point3D V, double s) {
@@ -180,7 +215,7 @@ public class RayTracer extends JPanel {
     
                 // Specular reflection (if specular exponent s is not -1)
                 if (s != -1) {
-                    Point3D R = N.multiply(2 * nDotL).subtract(L); // Reflection vector: R = 2 * N * (N · L) - L
+                    Point3D R = reflectRay(L, N); // Use ReflectRay for reflection
                     double rDotV = R.dot(V);
                     if (rDotV > 0) {
                         intensity += light.intensity * Math.pow(rDotV / (R.length() * V.length()), s);
