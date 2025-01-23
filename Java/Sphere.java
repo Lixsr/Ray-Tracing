@@ -6,11 +6,13 @@ class Sphere {
     double radius;
     Color color;
     double specular;
+    double reflective;
 
-    public Sphere(Point3D center, double radius, Color color, double specular) {
+    Sphere(Point3D center, double radius, Color color, double specular, double reflective) {
         this.center = center;
         this.radius = radius;
         this.color = color;
         this.specular = specular;
+        this.reflective = reflective;
     }
 }
