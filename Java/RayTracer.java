@@ -8,8 +8,8 @@ public class RayTracer extends JPanel {
     private static final int HEIGHT = 800;
     private static final double VIEWPORT_SIZE = 1;
     private static final double PROJECTION_PLANE_D = 1;
-    private static final Color BACKGROUND_COLOR = Color.BLACK;
-    private static Sphere[] scene;
+    private static final Color BACKGROUND_COLOR = Color.WHITE;
+    private static SceneObject[] scene;
     private static Color[][] canvas;
 
     public RayTracer() {
@@ -33,7 +33,7 @@ public class RayTracer extends JPanel {
 
     /// Camera parameters
     private static Point3D cameraPosition = new Point3D(0, 0, 0);
-    private static double yaw = 0;   // Horizontal rotation (left/right)
+    private static double yaw = 0; // Horizontal rotation (left/right)
     private static double pitch = 0; // Vertical rotation (up/down)
 
     // Render the scene
@@ -93,7 +93,8 @@ public class RayTracer extends JPanel {
         int g = (int) (color1.getGreen() * (1 - weight) + color2.getGreen() * weight);
         // Calculate the blue component by blending the two colors based on the weight
         int b = (int) (color1.getBlue() * (1 - weight) + color2.getBlue() * weight);
-        // Return the new blended color, ensuring that each component is within the valid range
+        // Return the new blended color, ensuring that each component is within the
+        // valid range
         return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
     }
 
@@ -105,59 +106,122 @@ public class RayTracer extends JPanel {
 
     // Initialize the scene
     static {
-        scene = new Sphere[] {
-            new Sphere(new Point3D(0, -1, 3), 1, Color.RED, 500, 0.2),    // Shiny red sphere
-            new Sphere(new Point3D(2, 0, 4), 1, Color.BLUE, 500, 0.3),    // Shiny blue sphere
-            new Sphere(new Point3D(-2, 0, 4), 1, Color.GREEN, 10, 0.4),   // Somewhat shiny green sphere
-            new Sphere(new Point3D(0, -5001, 0), 5000, new Color(255, 255, 0), 1000, 0.5) // Very shiny yellow sphere
+        scene = new SceneObject[] {
+                new Sphere(new Point3D(0, -1, 3), 1, Color.RED, 500, 0.2), // Shiny red sphere
+                new Sphere(new Point3D(2, 0, 4), 1, Color.BLUE, 500, 0.3), // Shiny blue sphere
+                new Sphere(new Point3D(-2, 0, 4), 1, Color.GREEN, 10, 0.4), // Somewhat shiny green sphere
+                new Sphere(new Point3D(0, -5001, 0), 5000, new Color(255, 255, 0), 1000, 0.5), // Very shiny yellow
+                                                                                               // sphere
+                new Cylinder(new Point3D(0, 1, 5), 1, 3, new Color(128, 0, 128), 300, 0.6) // Purple cylinder
         };
-        
     }
+
 
     // Canvas to viewport conversion
     private static Point3D canvasToViewport(int x, int y) {
         return new Point3D(
-            x * VIEWPORT_SIZE / WIDTH,
-            y * VIEWPORT_SIZE / HEIGHT,
-            PROJECTION_PLANE_D
-        );
+                x * VIEWPORT_SIZE / WIDTH,
+                y * VIEWPORT_SIZE / HEIGHT,
+                PROJECTION_PLANE_D);
     }
 
     private static IntersectionResult closestIntersection(Point3D O, Point3D D, double tMin, double tMax) {
         double closestT = Double.POSITIVE_INFINITY;
-        Sphere closestSphere = null;
-    
-        // Iterate through all spheres in the scene
-        for (Sphere sphere : scene) {
-            // Calculate intersection points with the sphere
-            double[] tValues = intersectRaySphere(O, D, sphere);
+        SceneObject closestObject = null;
+
+        // Iterate through all objects in the scene
+        for (SceneObject obj : scene) {
+            double[] tValues = null;
+
+            // Check if the object is a Sphere
+            if (obj instanceof Sphere) {
+                Sphere sphere = (Sphere) obj;
+                tValues = intersectRaySphere(O, D, sphere);
+            }
+            // Check if the object is a Cylinder
+            else if (obj instanceof Cylinder) {
+                Cylinder cylinder = (Cylinder) obj;
+                tValues = intersectRayCylinder(O, D, cylinder);
+            }
+
+            // If tValues is null, skip this object
+            if (tValues == null)
+                continue;
+
+            // Check the intersection points
             double t1 = tValues[0];
             double t2 = tValues[1];
-    
+
             // Check if t1 is within the valid range and closer than the current closest
             if (t1 >= tMin && t1 <= tMax && t1 < closestT) {
                 closestT = t1;
-                closestSphere = sphere;
+                closestObject = obj;
             }
-    
+
             // Check if t2 is within the valid range and closer than the current closest
             if (t2 >= tMin && t2 <= tMax && t2 < closestT) {
                 closestT = t2;
-                closestSphere = sphere;
+                closestObject = obj;
             }
         }
-    
-        // Return the closest sphere and the corresponding t value
-        return new IntersectionResult(closestSphere, closestT);
+
+        // Return the closest object and the corresponding t value
+        return new IntersectionResult(closestObject, closestT);
     }
-    
+
+    private static double[] intersectRayCylinder(Point3D O, Point3D D, Cylinder cylinder) {
+        // Extract cylinder properties
+        Point3D center = cylinder.center;
+        double radius = cylinder.radius;
+        double height = cylinder.height;
+
+        // Vector from ray origin to cylinder center
+        Point3D CO = O.subtract(center);
+
+        // Project the ray direction onto the cylinder's axis (assume axis is along the
+        // y-axis)
+        double dy = D.y;
+        double cy = CO.y;
+
+        // Calculate coefficients for the quadratic equation
+        double a = D.x * D.x + D.z * D.z;
+        double b = 2 * (D.x * CO.x + D.z * CO.z);
+        double c = CO.x * CO.x + CO.z * CO.z - radius * radius;
+
+        // Solve the quadratic equation: at^2 + bt + c = 0
+        double discriminant = b * b - 4 * a * c;
+
+        // No intersection if discriminant is negative
+        if (discriminant < 0) {
+            return null;
+        }
+
+        // Calculate the two intersection points
+        double t1 = (-b - Math.sqrt(discriminant)) / (2 * a);
+        double t2 = (-b + Math.sqrt(discriminant)) / (2 * a);
+
+        // Check if the intersection points are within the cylinder's height
+        double y1 = O.y + t1 * D.y;
+        double y2 = O.y + t2 * D.y;
+
+        if (y1 < center.y || y1 > center.y + height) {
+            t1 = Double.POSITIVE_INFINITY; // Invalid intersection
+        }
+        if (y2 < center.y || y2 > center.y + height) {
+            t2 = Double.POSITIVE_INFINITY; // Invalid intersection
+        }
+
+        // Return the valid intersection points
+        return new double[] { t1, t2 };
+    }
+
     // Helper class to store the result of the intersection
     private static class IntersectionResult {
-        Sphere sphere;
+        SceneObject object;
         double t;
-    
-        IntersectionResult(Sphere sphere, double t) {
-            this.sphere = sphere;
+
+        IntersectionResult(SceneObject object, double t) {
+            this.object = object;
             this.t = t;
         }
     }
@@ -185,44 +249,44 @@ public class RayTracer extends JPanel {
         if (recursionDepth <= 0) {
             return BACKGROUND_COLOR;
         }
-    
+
         // Find the closest intersection
         IntersectionResult result = closestIntersection(O, D, tMin, tMax);
-        Sphere closestSphere = result.sphere;
+        SceneObject closestObject = result.object;
         double closestT = result.t;
-    
+
         // If no intersection, return the background color
-        if (closestSphere == null) {
+        if (closestObject == null) {
             return BACKGROUND_COLOR;
         }
-    
+
         // Compute intersection point and normal
         Point3D P = O.add(D.multiply(closestT)); // P = O + t * D
-        Point3D N = P.subtract(closestSphere.center).normalize(); // N = (P - C) / |P - C|
-    
+        Point3D N = P.subtract(closestObject.center).normalize(); // N = (P - C) / |P - C|
+
         // Compute local color (diffuse and specular lighting)
-        double lighting = computeLighting(P, N, D.multiply(-1), closestSphere.specular);
-        Color localColor = multiplyColor(closestSphere.color, lighting);
-    
-        // If the sphere is not reflective or recursion limit is reached, return the local color
-        double r = closestSphere.reflective;
+        double lighting = computeLighting(P, N, D.multiply(-1), closestObject.specular);
+        Color localColor = multiplyColor(closestObject.color, lighting);
+
+        // If the object is not reflective or recursion limit is reached, return the
+        // local color
+        double r = closestObject.reflective;
         if (recursionDepth <= 0 || r <= 0) {
             return localColor;
         }
-    
+
         // Compute reflected color
         Point3D R = reflectRay(D.multiply(-1), N); // R = reflect(-D, N)
         Color reflectedColor = traceRay(P, R, 0.001, Double.POSITIVE_INFINITY, recursionDepth - 1);
-    
+
         // Blend local color and reflected color based on reflectivity
         return blendColors(localColor, reflectedColor, r);
     }
 
-
     // Compute lighting
     private static double computeLighting(Point3D P, Point3D N, Point3D V, double s) {
         double intensity = 0.0;
-    
+
         for (Light light : lights) {
             if (light.type == Light.LightType.AMBIENT) {
                 // Ambient light
@@ -230,7 +294,7 @@ public class RayTracer extends JPanel {
             } else {
                 Point3D L;
                 double tMax;
-    
+
                 if (light.type == Light.LightType.POINT) {
                     // Point light: L is the vector from P to the light source
                     L = light.position.subtract(P);
@@ -240,20 +304,20 @@ public class RayTracer extends JPanel {
                     L = light.direction;
                     tMax = Double.POSITIVE_INFINITY; // t_max is infinity for directional lights
                 }
-    
+
                 // Shadow check
                 IntersectionResult shadowResult = closestIntersection(P, L, 0.001, tMax);
-                if (shadowResult.sphere != null) {
+                if (shadowResult.object != null) {
                     // If there's an intersection, skip this light (shadow)
                     continue;
                 }
-    
+
                 // Diffuse reflection
                 double nDotL = N.dot(L);
                 if (nDotL > 0) {
                     intensity += light.intensity * nDotL / (N.length() * L.length());
                 }
-    
+
                 // Specular reflection (if specular exponent s is not -1)
                 if (s != -1) {
                     Point3D R = reflectRay(L, N); // Use ReflectRay for reflection
@@ -264,15 +328,15 @@ public class RayTracer extends JPanel {
                 }
             }
         }
-    
+
         return intensity;
     }
-    
+
     // Initialize the lights
     static Light[] lights = new Light[] {
-        new Light(Light.LightType.AMBIENT, 0.2, null, null),
-        new Light(Light.LightType.POINT, 0.6, new Point3D(2, 1, 0), null),
-        new Light(Light.LightType.DIRECTIONAL, 0.2, null, new Point3D(1, 4, 4))
+            new Light(Light.LightType.AMBIENT, 0.2, null, null),
+            new Light(Light.LightType.POINT, 0.6, new Point3D(2, 1, 0), null),
+            new Light(Light.LightType.DIRECTIONAL, 0.2, null, new Point3D(1, 4, 4))
     };
 
     // Main method

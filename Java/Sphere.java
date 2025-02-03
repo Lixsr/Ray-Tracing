@@ -1,18 +1,11 @@
-import java.awt.*;
+import java.awt.Color;
 
-// Sphere class
-class Sphere {
-    Point3D center;
+class Sphere extends SceneObject {
     double radius;
-    Color color;
-    double specular;
-    double reflective;
 
     Sphere(Point3D center, double radius, Color color, double specular, double reflective) {
-        this.center = center;
+        super(center, color, specular, reflective);
         this.radius = radius;
-        this.color = color;
-        this.specular = specular;
-        this.reflective = reflective;
     }
 }
+
