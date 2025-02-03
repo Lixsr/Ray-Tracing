@@ -8,7 +8,7 @@ public class RayTracer extends JPanel {
     private static final int HEIGHT = 800;
     private static final double VIEWPORT_SIZE = 1;
     private static final double PROJECTION_PLANE_D = 1;
-    private static final Color BACKGROUND_COLOR = Color.BLACK;
+    private static final Color BACKGROUND_COLOR = Color.WHITE;
     private static Sphere[] scene;
     private static Color[][] canvas;
 
@@ -28,18 +28,51 @@ public class RayTracer extends JPanel {
         }
     }
 
+    /// Camera parameters
+private static Point3D cameraPosition = new Point3D(0, 0, 0);
+private static double yaw = 0;   // Horizontal rotation (left/right)
+private static double pitch = 0; // Vertical rotation (up/down)
+
     // Render the scene
     private static void render() {
         canvas = new Color[HEIGHT][WIDTH];
-    
+
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
+                // Get viewport direction
                 Point3D D = canvasToViewport(x - WIDTH / 2, HEIGHT / 2 - y).normalize();
-                Color color = traceRay(new Point3D(0, 0, 0), D, 1, Double.POSITIVE_INFINITY, 3); // Recursion depth = 3
+
+                // Rotate the direction vector based on the camera's yaw and pitch
+                D = rotateVector(D, yaw, pitch);
+
+                // Trace ray from the camera position
+                Color color = traceRay(cameraPosition, D, 1, Double.POSITIVE_INFINITY, 3); // Recursion depth = 3
                 canvas[y][x] = color;
             }
         }
     }
+
+    // Rotate a vector using yaw (horizontal) and pitch (vertical) rotations
+    private static Point3D rotateVector(Point3D v, double yaw, double pitch) {
+        // Convert angles to radians
+        double yawRad = Math.toRadians(yaw);
+        double pitchRad = Math.toRadians(pitch);
+
+        // Apply pitch rotation (around X-axis)
+        double cosPitch = Math.cos(pitchRad);
+        double sinPitch = Math.sin(pitchRad);
+        double y1 = cosPitch * v.y - sinPitch * v.z;
+        double z1 = sinPitch * v.y + cosPitch * v.z;
+
+        // Apply yaw rotation (around Y-axis)
+        double cosYaw = Math.cos(yawRad);
+        double sinYaw = Math.sin(yawRad);
+        double x2 = cosYaw * v.x + sinYaw * z1;
+        double z2 = -sinYaw * v.x + cosYaw * z1;
+
+        return new Point3D(x2, y1, z2).normalize();
+    }
+
 
     // Helper Function
     private static Color multiplyColor(Color color, double scalar) {
@@ -51,11 +84,18 @@ public class RayTracer extends JPanel {
 
     // Helper Function
     private static Color blendColors(Color color1, Color color2, double weight) {
-        int r = (int) (color1.getRed() * (1 - weight) + color2.getRed() * weight);
-        int g = (int) (color1.getGreen() * (1 - weight) + color2.getGreen() * weight);
-        int b = (int) (color1.getBlue() * (1 - weight) + color2.getBlue() * weight);
-        return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
+        if (weight < 0 || weight > 1) {
+            throw new IllegalArgumentException("Weight must be between 0 and 1");
+        }
+    
+        int r = (int) ((color1.getRed() * (1 - weight)) + (color2.getRed() * weight));
+        int g = (int) ((color1.getGreen() * (1 - weight)) + (color2.getGreen() * weight));
+        int b = (int) ((color1.getBlue() * (1 - weight)) + (color2.getBlue() * weight));
+        int a = (int) ((color1.getAlpha() * (1 - weight)) + (color2.getAlpha() * weight)); // Handles transparency
+    
+        return new Color(r, g, b, a);
     }
+    
 
     private static Point3D reflectRay(Point3D R, Point3D N) {
         // R_reflected = 2 * N * (N · R) - R
@@ -65,13 +105,13 @@ public class RayTracer extends JPanel {
     // Initialize the scene
     static {
         scene = new Sphere[] {
-            new Sphere(new Point3D(0, -1, 3), 1, Color.RED, 500, 0.2),    // Shiny red sphere
-            new Sphere(new Point3D(2, 0, 4), 1, Color.BLUE, 500, 0.3),    // Shiny blue sphere
-            new Sphere(new Point3D(-2, 0, 4), 1, Color.GREEN, 10, 0.4),   // Somewhat shiny green sphere
-            new Sphere(new Point3D(0, -5001, 0), 5000, new Color(255, 255, 0), 1000, 0.5) // Very shiny yellow sphere
+            new Sphere(new Point3D(0, -1, 3), 1, Color.RED, 500, 0.2, 0.0, 1.0),    // Shiny red sphere (opaque)
+            new Sphere(new Point3D(2, 0, 4), 1, Color.BLUE, 500, 0.3, 0.0, 1.0),    // Opaque blue sphere
+            new Sphere(new Point3D(-2, 0, 4), 1, Color.GREEN, 10, 0.4, 0.0, 1.0),   // Opaque green sphere
+            new Sphere(new Point3D(0, -5001, 0), 5000, new Color(255, 255, 0), 1000, 0.5, 0.0, 1.0) // Opaque shiny yellow floor
         };
-        
     }
+
 
     // Canvas to viewport conversion
     private static Point3D canvasToViewport(int x, int y) {
@@ -173,8 +213,30 @@ public class RayTracer extends JPanel {
         Point3D R = reflectRay(D.multiply(-1), N); // R = reflect(-D, N)
         Color reflectedColor = traceRay(P, R, 0.001, Double.POSITIVE_INFINITY, recursionDepth - 1);
     
-        // Blend local color and reflected color based on reflectivity
-        return blendColors(localColor, reflectedColor, r);
+        // Compute refracted color if the material is transparent
+        double transparency = closestSphere.transparency;
+        Color refractedColor = BACKGROUND_COLOR;
+
+        if (recursionDepth > 0 && transparency > 0) {
+            Point3D refractedRay = refractRay(D, N, 1.0, closestSphere.refractiveIndex);
+            if (refractedRay != null) {
+                refractedColor = traceRay(P, refractedRay, 0.001, Double.POSITIVE_INFINITY, recursionDepth - 1);
+            }
+        }
+
+        // Blend local, reflected, and refracted colors
+        return blendColors(blendColors(localColor, reflectedColor, r), refractedColor, transparency);
+    }
+    private static Point3D refractRay(Point3D I, Point3D N, double n1, double n2) {
+        double eta = n1 / n2;
+        double cosI = -N.dot(I);
+        double sinT2 = eta * eta * (1 - cosI * cosI);
+    
+        // Total internal reflection
+        if (sinT2 > 1) return null;
+    
+        double cosT = Math.sqrt(1 - sinT2);
+        return I.multiply(eta).add(N.multiply(eta * cosI - cosT)).normalize();
     }
 
 
