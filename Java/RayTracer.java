@@ -20,18 +20,21 @@ public class RayTracer extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        // Loop through each pixel in the canvas
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
+                // Set the color for the current pixel
                 g.setColor(canvas[y][x]);
+                // Draw the pixel as a 1x1 rectangle
                 g.fillRect(x, y, 1, 1);
             }
         }
     }
 
     /// Camera parameters
-private static Point3D cameraPosition = new Point3D(0, 0, 0);
-private static double yaw = 0;   // Horizontal rotation (left/right)
-private static double pitch = 0; // Vertical rotation (up/down)
+    private static Point3D cameraPosition = new Point3D(0, 0, 0);
+    private static double yaw = 0;   // Horizontal rotation (left/right)
+    private static double pitch = 0; // Vertical rotation (up/down)
 
     // Render the scene
     private static void render() {
@@ -70,9 +73,9 @@ private static double pitch = 0; // Vertical rotation (up/down)
         double x2 = cosYaw * v.x + sinYaw * z1;
         double z2 = -sinYaw * v.x + cosYaw * z1;
 
+        // Return the rotated and normalized vector
         return new Point3D(x2, y1, z2).normalize();
     }
-
 
     // Helper Function
     private static Color multiplyColor(Color color, double scalar) {
@@ -82,14 +85,19 @@ private static double pitch = 0; // Vertical rotation (up/down)
         return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
     }
 
-    // Helper Function
+    // Helper Function to blend two colors based on a weight
     private static Color blendColors(Color color1, Color color2, double weight) {
+        // Calculate the red component by blending the two colors based on the weight
         int r = (int) (color1.getRed() * (1 - weight) + color2.getRed() * weight);
+        // Calculate the green component by blending the two colors based on the weight
         int g = (int) (color1.getGreen() * (1 - weight) + color2.getGreen() * weight);
+        // Calculate the blue component by blending the two colors based on the weight
         int b = (int) (color1.getBlue() * (1 - weight) + color2.getBlue() * weight);
+        // Return the new blended color, ensuring that each component is within the valid range
         return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
     }
 
+    // Helper Function to reflect a ray around a normal vector
     private static Point3D reflectRay(Point3D R, Point3D N) {
         // R_reflected = 2 * N * (N · R) - R
         return N.multiply(2 * N.dot(R)).subtract(R);
