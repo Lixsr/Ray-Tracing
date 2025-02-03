@@ -28,18 +28,51 @@ public class RayTracer extends JPanel {
         }
     }
 
+    /// Camera parameters
+private static Point3D cameraPosition = new Point3D(0, 0, 0);
+private static double yaw = 0;   // Horizontal rotation (left/right)
+private static double pitch = 0; // Vertical rotation (up/down)
+
     // Render the scene
     private static void render() {
         canvas = new Color[HEIGHT][WIDTH];
-    
+
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
+                // Get viewport direction
                 Point3D D = canvasToViewport(x - WIDTH / 2, HEIGHT / 2 - y).normalize();
-                Color color = traceRay(new Point3D(0, 0, 0), D, 1, Double.POSITIVE_INFINITY, 3); // Recursion depth = 3
+
+                // Rotate the direction vector based on the camera's yaw and pitch
+                D = rotateVector(D, yaw, pitch);
+
+                // Trace ray from the camera position
+                Color color = traceRay(cameraPosition, D, 1, Double.POSITIVE_INFINITY, 3); // Recursion depth = 3
                 canvas[y][x] = color;
             }
         }
     }
+
+    // Rotate a vector using yaw (horizontal) and pitch (vertical) rotations
+    private static Point3D rotateVector(Point3D v, double yaw, double pitch) {
+        // Convert angles to radians
+        double yawRad = Math.toRadians(yaw);
+        double pitchRad = Math.toRadians(pitch);
+
+        // Apply pitch rotation (around X-axis)
+        double cosPitch = Math.cos(pitchRad);
+        double sinPitch = Math.sin(pitchRad);
+        double y1 = cosPitch * v.y - sinPitch * v.z;
+        double z1 = sinPitch * v.y + cosPitch * v.z;
+
+        // Apply yaw rotation (around Y-axis)
+        double cosYaw = Math.cos(yawRad);
+        double sinYaw = Math.sin(yawRad);
+        double x2 = cosYaw * v.x + sinYaw * z1;
+        double z2 = -sinYaw * v.x + cosYaw * z1;
+
+        return new Point3D(x2, y1, z2).normalize();
+    }
+
 
     // Helper Function
     private static Color multiplyColor(Color color, double scalar) {
