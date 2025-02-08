@@ -43,7 +43,7 @@ public class RayTracer extends JPanel {
         sceneList.add(new Sphere(new Point3D(0 - 1 , 1, 6 + .4), 1, Color.RED, 100, 0, 0, 1));
         sceneList.add(new Sphere(new Point3D(2  , 1, 6 + 0.7), 1, Color.WHITE, specular, 0.96, 0.2, 0.1));
         sceneList.add(new Sphere(new Point3D(4 + 0.5, 1, 6 + 0.8), 1, Color.WHITE, specular, 0.96, 0, 0.5));
-
+        sceneList.add(new Cylinder(new Point3D(2, 2, 5), 1, 3, new Color(128, 0, 128), 300, 0.6, 0.2, 0.8));
         // Random small spheres 
         for (int a = -5; a < 5; a++) {
             for (int b = -5; b < 5; b++) {
