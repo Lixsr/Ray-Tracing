@@ -23,7 +23,7 @@ public class RayTracer extends JPanel {
     // Initialize the lights
     static Light[] lights = new Light[] {
         new Light(Light.LightType.AMBIENT, 0.2, null, null),
-        new Light(Light.LightType.POINT, 0.6, new Point3D(4, 1, 0), null),
+        // new Light(Light.LightType.POINT, 0.6, new Point3D(4, 1, 0), null),
         new Light(Light.LightType.DIRECTIONAL, 0.2, null, new Point3D(1, 4, 4))
     };
 
@@ -43,16 +43,16 @@ public class RayTracer extends JPanel {
         sceneList.add(new Sphere(new Point3D(0 - 1 , 1, 6 + .4), 1, Color.RED, 100, 0, 0, 1));
         sceneList.add(new Sphere(new Point3D(2  , 1, 6 + 0.7), 1, Color.WHITE, specular, 0.96, 0.2, 0.1));
         sceneList.add(new Sphere(new Point3D(4 + 0.5, 1, 6 + 0.8), 1, Color.WHITE, specular, 0.96, 0, 0.5));
-        sceneList.add(new Cylinder(new Point3D(0, 2.5, 5), 1, 3, new Color(128, 0, 128), 300, 0.4, 0, 1));
+        // sceneList.add(new Cylinder(new Point3D(0, 2.5, 5), 1, 3, new Color(128, 0, 128), 300, 0.4, 0, 1));
         // Random small spheres 
-        for (int a = -5; a < 5; a++) {
-            for (int b = -5; b < 5; b++) {
+        for (int a = -11; a < 11; a++) {
+            for (int b = -11; b < 11; b++) {
                 specular = rand.nextInt(1000);
                 // Randomly select transparency between 0.8 and 1
                 refractiveIndex = 0.6 + (rand.nextDouble() * 0.2);
                 // Randomly select refraction between 0 and 0.4
-                transparency = rand.nextDouble() * 0.4;
-                reflection = rand.nextDouble();
+                transparency = rand.nextDouble() * 0.2;
+                reflection = 0 + 0.3 *rand.nextDouble();
 
                 Point3D center = new Point3D(a + 0.9 * rand.nextDouble(), 0.2, b + 0.9 * rand.nextDouble());
                 // sceneList.add(new Sphere(center, 0.2, randomColor, specular, reflection, transparency, refractiveIndex));
