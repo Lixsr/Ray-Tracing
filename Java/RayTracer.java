@@ -43,7 +43,7 @@ public class RayTracer extends JPanel {
         sceneList.add(new Sphere(new Point3D(0 - 1 , 1, 6 + .4), 1, Color.RED, 100, 0, 0, 1));
         sceneList.add(new Sphere(new Point3D(2  , 1, 6 + 0.7), 1, Color.WHITE, specular, 0.96, 0.2, 0.1));
         sceneList.add(new Sphere(new Point3D(4 + 0.5, 1, 6 + 0.8), 1, Color.WHITE, specular, 0.96, 0, 0.5));
-        sceneList.add(new Cylinder(new Point3D(2, 2, 5), 1, 3, new Color(128, 0, 128), 300, 0.6, 0.2, 0.8));
+        sceneList.add(new Cylinder(new Point3D(0, 2.5, 5), 1, 3, new Color(128, 0, 128), 300, 0.4, 0, 1));
         // Random small spheres 
         for (int a = -5; a < 5; a++) {
             for (int b = -5; b < 5; b++) {
@@ -353,30 +353,62 @@ public class RayTracer extends JPanel {
     
         Point3D CO = O.subtract(center);
     
-        double dy = D.y;
-        double cy = CO.y;
-    
+        // Intersection with the side of the cylinder
         double a = D.x * D.x + D.z * D.z;
         double b = 2 * (D.x * CO.x + D.z * CO.z);
         double c = CO.x * CO.x + CO.z * CO.z - radius * radius;
     
         double discriminant = b * b - 4 * a * c;
     
-        if (discriminant < 0) {
-            return null;
+        double t1 = Double.POSITIVE_INFINITY;
+        double t2 = Double.POSITIVE_INFINITY;
+    
+        if (discriminant >= 0) {
+            t1 = (-b - Math.sqrt(discriminant)) / (2 * a);
+            t2 = (-b + Math.sqrt(discriminant)) / (2 * a);
+    
+            double y1 = O.y + t1 * D.y;
+            double y2 = O.y + t2 * D.y;
+    
+            // Check if the intersection points are within the cylinder's height
+            if (y1 < center.y || y1 > center.y + height) {
+                t1 = Double.POSITIVE_INFINITY;
+            }
+            if (y2 < center.y || y2 > center.y + height) {
+                t2 = Double.POSITIVE_INFINITY;
+            }
         }
     
-        double t1 = (-b - Math.sqrt(discriminant)) / (2 * a);
-        double t2 = (-b + Math.sqrt(discriminant)) / (2 * a);
-    
-        double y1 = O.y + t1 * D.y;
-        double y2 = O.y + t2 * D.y;
-    
-        if (y1 < center.y || y1 > center.y + height) {
-            t1 = Double.POSITIVE_INFINITY;
+        // Intersection with the bottom cap (y = center.y)
+        double tBottom = (center.y - O.y) / D.y;
+        if (tBottom > 0) {
+            Point3D intersectionBottom = O.add(D.multiply(tBottom));
+            double distanceSquared = (intersectionBottom.x - center.x) * (intersectionBottom.x - center.x) +
+                                     (intersectionBottom.z - center.z) * (intersectionBottom.z - center.z);
+            if (distanceSquared <= radius * radius) {
+                if (tBottom < t1) {
+                    t2 = t1;
+                    t1 = tBottom;
+                } else if (tBottom < t2) {
+                    t2 = tBottom;
+                }
+            }
         }
-        if (y2 < center.y || y2 > center.y + height) {
-            t2 = Double.POSITIVE_INFINITY;
+    
+        // Intersection with the top cap (y = center.y + height)
+        double tTop = (center.y + height - O.y) / D.y;
+        if (tTop > 0) {
+            Point3D intersectionTop = O.add(D.multiply(tTop));
+            double distanceSquared = (intersectionTop.x - center.x) * (intersectionTop.x - center.x) +
+                                     (intersectionTop.z - center.z) * (intersectionTop.z - center.z);
+            if (distanceSquared <= radius * radius) {
+                if (tTop < t1) {
+                    t2 = t1;
+                    t1 = tTop;
+                } else if (tTop < t2) {
+                    t2 = tTop;
+                }
+            }
         }
     
         // Ensure valid intersections
