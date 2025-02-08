@@ -1,16 +1,9 @@
 # Ray Tracer in Java
 
-This is a simple ray tracing program written in Java. It renders a scene with three spheres (red, green, and blue) using basic ray tracing techniques. The program uses Java's `javax.swing` library to display the rendered image in a window.
+This is a simple ray tracing program written in Java. The program uses Java's `javax.swing` library to display the rendered image in a window.
 
 ---
 
-## Features
-
-- **Sphere Rendering**: Renders a 2D projection of a 3D scene.
-- **Ray-Sphere Intersection**: Uses mathematical formulas to compute intersections between rays and spheres.
-- **Interactive Display**: Displays the rendered image in a window using Java's `JFrame`.
-
----
 
 ## Prerequisites
 
